@@ -1,3 +1,7 @@
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+
 def draw_table_frame(speeds, shot_classif, player_info, frame_idx, fps=25,
                      last_max_state=None, max_fade_tracker=None,
                      last_shot_state=None, fade_duration=10):
