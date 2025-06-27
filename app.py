@@ -11,31 +11,26 @@ st.set_page_config(page_title="🎾 Tennis Video Overlay", layout="wide")
 # ------------------
 custom_css = """
 <style>
-/* Background & fonts */
 body {
     background-color: #f0fff0;
     color: #002147;
     font-family: 'Helvetica', sans-serif;
 }
-
 h1, h2, h3 {
-    color: #006400; /* Deep green like tennis courts */
+    color: #006400;
     font-weight: bold;
 }
-
 .stButton>button {
-    background-color: #ffd700 !important; /* tennis ball yellow */
+    background-color: #ffd700 !important;
     color: black !important;
     border-radius: 10px;
     font-weight: bold;
 }
-
 .stCheckbox>label {
     font-size: 16px;
     font-weight: 500;
-    color: #003366; /* dark blue */
+    color: #003366;
 }
-
 .sidebar .sidebar-content {
     background-color: #e6ffe6;
 }
@@ -52,7 +47,29 @@ JSON_PATHS = {
     "players": Path("assets/player_data.json"),
     "shots": Path("assets/shots_data.json")
 }
-# These will be used inside your actual functions later
+
+# ------------------
+# INIT SESSION STATE
+# ------------------
+defaults = {
+    "show_ball_traj": True,
+    "color_by_speed": False,
+    "show_player_traj": True,
+    "player_tail": True,
+    "show_bounce": True,
+    "show_hit": True,
+    "show_shot_data": False,
+    "show_minimap": False,
+    "minimap_player_tail": True,
+    "minimap_shots": True,
+    "show_analytics": False,
+    "graphics": [],
+    "table": [],
+    "analysis_created": False
+}
+for key, value in defaults.items():
+    if key not in st.session_state:
+        st.session_state[key] = value
 
 # ------------------
 # SIDEBAR CONTROLS
@@ -62,23 +79,23 @@ st.sidebar.title("🎾 Overlay Options")
 
 st.sidebar.subheader("A. Video Overlays")
 
-show_ball_traj = st.sidebar.checkbox("🎾 Ball Trajectory", value=True)
-color_by_speed = st.sidebar.checkbox("Color by Speed", value=False) if show_ball_traj else False
+st.session_state["show_ball_traj"] = st.sidebar.checkbox("🎾 Ball Trajectory", value=st.session_state["show_ball_traj"])
+st.session_state["color_by_speed"] = st.sidebar.checkbox("Color by Speed", value=st.session_state["color_by_speed"]) if st.session_state["show_ball_traj"] else False
 
-show_player_traj = st.sidebar.checkbox("🏃 Player Trajectories", value=True)
-player_tail = st.sidebar.checkbox("Show Player Tails", value=True) if show_player_traj else False
+st.session_state["show_player_traj"] = st.sidebar.checkbox("🏃 Player Trajectories", value=st.session_state["show_player_traj"])
+st.session_state["player_tail"] = st.sidebar.checkbox("Show Player Tails", value=st.session_state["player_tail"]) if st.session_state["show_player_traj"] else False
 
-show_bounce = st.sidebar.checkbox("🟢 Show Bounce Points", value=True)
-show_hit = st.sidebar.checkbox("🎯 Show Hit Points", value=True)
-show_shot_data = st.sidebar.checkbox("📈 Show Shot Data", value=False)
+st.session_state["show_bounce"] = st.sidebar.checkbox("🟢 Show Bounce Points", value=st.session_state["show_bounce"])
+st.session_state["show_hit"] = st.sidebar.checkbox("🎯 Show Hit Points", value=st.session_state["show_hit"])
+st.session_state["show_shot_data"] = st.sidebar.checkbox("📈 Show Shot Data", value=st.session_state["show_shot_data"])
 
 st.sidebar.subheader("B. Minimap")
-show_minimap = st.sidebar.checkbox("🗺️ Show Minimap", value=False)
-minimap_player_tail = st.sidebar.checkbox("Minimap Player Tails", value=True) if show_minimap else False
-minimap_shots = st.sidebar.checkbox("Minimap Shot Trajectories", value=True) if show_minimap else False
+st.session_state["show_minimap"] = st.sidebar.checkbox("🗺️ Show Minimap", value=st.session_state["show_minimap"])
+st.session_state["minimap_player_tail"] = st.sidebar.checkbox("Minimap Player Tails", value=st.session_state["minimap_player_tail"]) if st.session_state["show_minimap"] else False
+st.session_state["minimap_shots"] = st.sidebar.checkbox("Minimap Shot Trajectories", value=st.session_state["minimap_shots"]) if st.session_state["show_minimap"] else False
 
 st.sidebar.subheader("C. Analytics")
-show_analytics = st.sidebar.checkbox("📊 Show Analytics", value=False)
+st.session_state["show_analytics"] = st.sidebar.checkbox("📊 Show Analytics", value=st.session_state["show_analytics"])
 
 # ------------------
 # MAIN AREA
@@ -92,27 +109,37 @@ if VIDEO_PATH.exists():
 else:
     st.error("Video not found. Please check path: `assets/video.mp4`")
 
-# DOWNLOAD BUTTON
-st.markdown("### ⬇️ Download")
-st.button("🎾 Download Processed Video")
+# ANALYTICS OPTIONS
+if st.session_state["show_analytics"]:
+    st.markdown("## 📊 Analytics Settings")
+    st.session_state["graphics"] = st.multiselect("Choose Graphics to Display", ["speed", "distance", "depth"], default=st.session_state["graphics"])
+    st.session_state["table"] = st.multiselect("Choose Tables to Display", ["speed", "shot speed", "shot stats"], default=st.session_state["table"])
 
-# ANALYTICS PANEL
-if show_analytics:
-    st.markdown("## 📊 Analytics Summary")
-    st.info("This is where you could display stats like average rally length, player movement heatmaps, shot speeds, etc.")
+    if st.button("🧠 Create Analysis"):
+        # Placeholder for analysis logic
+        st.success("Analysis created!")
+        st.session_state["analysis_created"] = True
+
+# DOWNLOAD BUTTON
+if st.session_state["analysis_created"]:
+    st.markdown("### ⬇️ Download")
+    st.button("🎾 Download Processed Video")
 
 # DEBUG / CONFIG PREVIEW
 with st.expander("🔧 Debug Configuration"):
     st.json({
-        "ball_trajectory": show_ball_traj,
-        "color_by_speed": color_by_speed,
-        "player_trajectory": show_player_traj,
-        "player_tail": player_tail,
-        "bounce": show_bounce,
-        "hit": show_hit,
-        "shot_data": show_shot_data,
-        "minimap": show_minimap,
-        "minimap_player_tail": minimap_player_tail,
-        "minimap_shots": minimap_shots,
-        "analytics": show_analytics
+        "ball_trajectory": st.session_state["show_ball_traj"],
+        "color_by_speed": st.session_state["color_by_speed"],
+        "player_trajectory": st.session_state["show_player_traj"],
+        "player_tail": st.session_state["player_tail"],
+        "bounce": st.session_state["show_bounce"],
+        "hit": st.session_state["show_hit"],
+        "shot_data": st.session_state["show_shot_data"],
+        "minimap": st.session_state["show_minimap"],
+        "minimap_player_tail": st.session_state["minimap_player_tail"],
+        "minimap_shots": st.session_state["minimap_shots"],
+        "analytics": st.session_state["show_analytics"],
+        "graphics": st.session_state["graphics"],
+        "table": st.session_state["table"],
+        "analysis_created": st.session_state["analysis_created"]
     })
